@@ -2,6 +2,8 @@ FROM docker.io/caddy:2.7-alpine
 
 WORKDIR /app
 
+EXPOSE 443
+
 COPY ./src .
 COPY Caddyfile .
 

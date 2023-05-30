@@ -1,4 +1,8 @@
-localhost
+{
+    http_port 8080
+}
 
+localhost:2080
+# Comment line below for docker use
 root * ./src/
 file_server

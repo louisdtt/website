@@ -1,8 +1,5 @@
-{
-    http_port 8080
-}
+auto_https off
 
-localhost:2080
-# Comment line below for docker use
-root * ./src/
+dutoit.tech
+
 file_server

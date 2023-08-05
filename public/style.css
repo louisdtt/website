@@ -18,5 +18,38 @@ h3{
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh; /* Adjust this value based on your requirements */
+  height: 100vh;
+}
+
+a, a:hover {
+	text-decoration: none;
+}
+
+.socialbtns, .socialbtns ul, .socialbtns li {
+  margin: 0;
+  padding: 5px;
+}
+
+.socialbtns li {
+    list-style: none outside none;
+    display: inline-block;
+}
+
+.socialbtns .fa {
+	width: 52px;
+  height: 36.4px;
+	color: #a9a9b3;
+	background-color: #292a2d;
+	border: 1px solid #a9a9b3;
+	padding-top: 15.6px;
+	border-radius: 33px;
+	-moz-border-radius: 33px;
+	-webkit-border-radius: 33px;
+	-o-border-radius: 33px;
+}
+
+.fa-lg {
+  font-size: 1.80em !important;
+  line-height: .75em !important;
+  vertical-align: -15% !important;
 }

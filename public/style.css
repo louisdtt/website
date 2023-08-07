@@ -21,10 +21,6 @@ h3{
   height: 100vh;
 }
 
-a, a:hover {
-	text-decoration: none;
-}
-
 .socialbtns, .socialbtns ul, .socialbtns li {
   margin: 0;
   padding: 5px;
@@ -35,7 +31,7 @@ a, a:hover {
     display: inline-block;
 }
 
-.socialbtns .fa {
+/* .socialbtns svg {
 	width: 52px;
   height: 36.4px;
 	color: #a9a9b3;
@@ -46,10 +42,4 @@ a, a:hover {
 	-moz-border-radius: 33px;
 	-webkit-border-radius: 33px;
 	-o-border-radius: 33px;
-}
-
-.fa-lg {
-  font-size: 1.80em !important;
-  line-height: .75em !important;
-  vertical-align: -15% !important;
-}
+} */

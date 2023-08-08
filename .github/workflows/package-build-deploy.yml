@@ -1,0 +1,18 @@
+name: Package build deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker build -t europe-west1-docker.pkg.dev/workspace-388218/cloud-run-source-deploy/my-website:latest .

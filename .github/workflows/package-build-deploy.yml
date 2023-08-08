@@ -14,5 +14,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1.1.1
+
     - name: Build the Docker image
       run: docker build -t europe-west1-docker.pkg.dev/workspace-388218/cloud-run-source-deploy/my-website:latest .

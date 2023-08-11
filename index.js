@@ -18,6 +18,4 @@ app.get('*', (req, res) => {
 });
 
 // Open app on port 3000
-app.listen(port, () => {
-  console.log(`Server is running on ${port}`);
-});
+app.listen(port);

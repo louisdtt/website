@@ -58,5 +58,5 @@ jobs:
           version: '>= 363.0.0'
           
       - name: Clean up artifacts
-        run: gcloud artifacts images delete --quiet gcr.io/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}@DIGEST
+        run: gcloud artifacts docker images list --include-tags
 

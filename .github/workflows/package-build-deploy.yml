@@ -58,5 +58,5 @@ jobs:
           version: '>= 363.0.0'
           
       - name: Clean up artifacts
-        run: gcloud artifacts docker rmi $(docker images -f "dangling=true" -q)
+        run: gcloud artifacts images delete --quiet gcr.io/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}@DIGEST
 

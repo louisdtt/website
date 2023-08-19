@@ -1,10 +1,11 @@
-FROM node:20 AS build-env
-ADD . /app
-WORKDIR /app
-RUN npm install --omit=dev
+FROM golang:latest AS builder
+WORKDIR /go/src/build
+COPY *.go go.* static ./
+RUN go mod tidy
+RUN CGO_ENABLED=0 go build -o app .
 
-FROM gcr.io/distroless/nodejs20-debian11:nonroot
-COPY --from=build-env /app /app
-WORKDIR /app
+FROM gcr.io/distroless/static-debian11:nonroot
+WORKDIR go/src/app
+COPY --from=builder /go/src/build/app ./
 EXPOSE 3000
-CMD ["index.js"]
+CMD ["./app"]

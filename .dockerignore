@@ -1,4 +1,4 @@
-node_modules
 .gitignore
 gha-creds-*.json
 .github
+Dockerfile

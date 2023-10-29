@@ -8,4 +8,4 @@ FROM gcr.io/distroless/nodejs20-debian12:nonroot
 COPY --from=build-env /app /app
 WORKDIR /app
 EXPOSE 3000
-CMD ["index.js"]
+CMD ["node" "index.js"]

@@ -1,7 +1,8 @@
 FROM node:20 AS build-env
+ENV NODE_ENV production
 ADD . /app
 WORKDIR /app
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 FROM gcr.io/distroless/nodejs20-debian12:nonroot
 COPY --from=build-env /app /app

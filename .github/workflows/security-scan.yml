@@ -10,6 +10,7 @@ jobs:
   security:
     permissions:
       security-events: write
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

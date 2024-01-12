@@ -19,3 +19,6 @@ app.get('*', (req, res) => {
 
 // Open app on port 3000
 app.listen(port);
+
+// Disable header
+app.disable('x-powered-by');

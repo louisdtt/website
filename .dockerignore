@@ -1,6 +1,0 @@
-.gitignore
-gha-creds-*.json
-.github
-.git
-Dockerfile
-.dockerignore

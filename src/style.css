@@ -30,3 +30,21 @@ h3{
     list-style: none outside none;
     display: inline-block;
 }
+
+.socialbtns ul {
+  list-style: none;
+  display: flex;
+  gap: 30px;
+  padding: 0;
+  justify-content: center;
+}
+
+.socialbtns ul li::after {
+  content: '';
+  display: block;
+  width: 10px;       /* Length of the underline */
+  height: 1px;       /* Thickness of the underline */
+  background-color: #a9a9b3;
+  margin: 8px auto 0;  /* Space between icon and line */
+  border-radius: 1px;  /* Optional: smooth edges */
+}

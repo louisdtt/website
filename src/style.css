@@ -6,7 +6,6 @@ body {
 
 a {
   color: #a9a9b3;
-  
 }
 
 h1 {
@@ -43,9 +42,9 @@ h1 {
 .socialbtns ul li::after {
   content: '';
   display: block;
-  width: 10px;       /* Length of the underline */
-  height: 1px;       /* Thickness of the underline */
+  width: 30px;
+  height: 1px;
   background-color: #a9a9b3;
-  margin: 8px auto 0;  /* Space between icon and line */
-  border-radius: 1px;  /* Optional: smooth edges */
+  margin: 8px auto 0;
+  border-radius: 1px;
 }

@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastermind - Multiplayer Code Breaking Game</title>
+    <link rel="stylesheet" type="text/css" href="../common/common.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* Game-specific styles */
+        .game-board {
+            background: #374151;
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .code-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: #1f2937;
+            border-radius: 8px;
+        }
+
+        .code-row.current {
+            background: #4b5563;
+            border: 2px solid #4f46e5;
+        }
+
+        .code-row.completed {
+            opacity: 0.7;
+        }
+
+        .peg-slot {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #6b7280;
+            background: #1f2937;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .peg-slot:hover:not(.filled) {
+            border-color: #4f46e5;
+            transform: scale(1.05);
+        }
+
+        .peg-slot.filled {
+            cursor: default;
+        }
+
+        .peg {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: inset 0 -4px 8px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .peg.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .peg.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .peg.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .peg.yellow { background: linear-gradient(135deg, #fde047, #facc15); }
+        .peg.purple { background: linear-gradient(135deg, #a855f7, #9333ea); }
+        .peg.orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .peg.white { background: linear-gradient(135deg, #f3f4f6, #d1d5db); }
+        .peg.pink { background: linear-gradient(135deg, #ec4899, #db2777); }
+
+        .feedback-area {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.25rem;
+            margin-left: auto;
+        }
+
+        .feedback-peg {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #6b7280;
+            background: #1f2937;
+        }
+
+        .feedback-peg.black {
+            background: #000;
+            border-color: #fff;
+        }
+
+        .feedback-peg.white {
+            background: #fff;
+            border-color: #000;
+        }
+
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .color-choice {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-choice:hover {
+            transform: scale(1.1);
+            border-color: #4f46e5;
+        }
+
+        .color-choice.selected {
+            border-color: #fff;
+            box-shadow: 0 0 0 3px #4f46e5;
+        }
+
+        .secret-code {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .secret-code-pegs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .secret-peg {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid #374151;
+        }
+
+        .secret-peg.hidden {
+            background: #1f2937;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .player-info {
+            background: #374151;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .turn-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #4f46e5;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            max-width: 200px;
+            margin: 1rem auto;
+            display: block;
+        }
+
+        .rules-section {
+            background: #374151;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .waiting-room {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .peg-slot {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .color-choice {
+                width: 38px;
+                height: 38px;
+            }
+            
+            .secret-peg {
+                width: 35px;
+                height: 35px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="w-full max-w-6xl mx-auto">
+        <!-- Navigation -->
+        <div class="text-left mb-8">
+            <a href="../" class="text-gray-400 no-underline text-sm inline-flex items-center gap-1">
+                ← Back to Games
+            </a>
+        </div>
+
+        <h1 class="text-4xl md:text-5xl font-bold mb-2 text-indigo-400 text-center">Mastermind</h1>
+        <p class="text-gray-400 mb-6 text-center">The Classic Code-Breaking Challenge</p>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="w-full max-w-2xl mx-auto text-center space-y-6">
+            <div id="create-section" class="bg-gray-800 p-6 rounded-lg">
+                <h2 class="text-2xl font-semibold mb-4">1. Create a Game</h2>
+                <p class="text-gray-400 mb-4">2 Players - Take turns as Codemaker and Codebreaker</p>
+                <button id="create-game-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Create Game</button>
+                <div id="host-info" class="hidden mt-4">
+                    <p class="mb-2">Share your Host ID with a friend:</p>
+                    <div class="flex justify-center items-center space-x-2">
+                        <input id="host-id-input" type="text" class="bg-gray-700 text-white p-2 rounded-md w-full max-w-md text-center" readonly>
+                        <button id="copy-id-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Copy</button>
+                    </div>
+                    <p id="copy-success" class="text-green-400 mt-2 h-5"></p>
+                    <div id="waiting-area" class="mt-6">
+                        <p class="text-gray-500 mb-4">Waiting for opponent...</p>
+                        <div id="opponent-name" class="text-xl font-semibold text-indigo-400"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="or-divider" class="text-gray-500 font-bold text-xl">OR</div>
+
+            <div id="join-section" class="bg-gray-800 p-6 rounded-lg">
+                <h2 class="text-2xl font-semibold mb-4">2. Join a Game</h2>
+                <p class="text-gray-400 mb-2">Enter the Host ID:</p>
+                <div class="flex justify-center items-center space-x-2">
+                    <input id="join-id-input" type="text" class="bg-gray-700 text-white p-2 rounded-md w-full max-w-xs text-center" placeholder="Enter Host ID...">
+                    <button id="join-game-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Join</button>
+                </div>
+            </div>
+
+            <!-- Rules -->
+            <div class="rules-section text-left">
+                <h3 class="text-xl font-semibold mb-3 text-center">How to Play</h3>
+                <ul class="space-y-2 text-gray-300 text-sm">
+                    <li>🎯 <strong>Codemaker</strong>: Set a secret 4-peg code using any colors (duplicates allowed)</li>
+                    <li>🔍 <strong>Codebreaker</strong>: You have 10 attempts to crack the code</li>
+                    <li>⚫ <strong>Black peg</strong>: Correct color in correct position</li>
+                    <li>⚪ <strong>White peg</strong>: Correct color in wrong position</li>
+                    <li>🏆 <strong>Win</strong>: Guess the code or defend it for 10 rounds</li>
+                    <li>🔄 Players switch roles after each round</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <!-- Player Info -->
+            <div class="player-info">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-400">You</p>
+                        <p class="font-semibold text-lg" id="my-name">Player 1</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400">Role</p>
+                        <p class="turn-indicator" id="my-role">Codemaker</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">Opponent</p>
+                        <p class="font-semibold text-lg" id="opponent-name-game">Player 2</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secret Code Area (for Codemaker) -->
+            <div id="codemaker-area" class="hidden">
+                <div class="secret-code">
+                    <p class="text-white font-semibold mb-2">Set Your Secret Code</p>
+                    <div class="secret-code-pegs" id="secret-code-pegs">
+                        <div class="secret-peg peg-slot" data-position="0"></div>
+                        <div class="secret-peg peg-slot" data-position="1"></div>
+                        <div class="secret-peg peg-slot" data-position="2"></div>
+                        <div class="secret-peg peg-slot" data-position="3"></div>
+                    </div>
+                </div>
+                <div class="color-palette" id="codemaker-palette">
+                    <div class="color-choice peg red" data-color="red"></div>
+                    <div class="color-choice peg blue" data-color="blue"></div>
+                    <div class="color-choice peg green" data-color="green"></div>
+                    <div class="color-choice peg yellow" data-color="yellow"></div>
+                    <div class="color-choice peg purple" data-color="purple"></div>
+                    <div class="color-choice peg orange" data-color="orange"></div>
+                    <div class="color-choice peg white" data-color="white"></div>
+                    <div class="color-choice peg pink" data-color="pink"></div>
+                </div>
+                <button id="submit-code-btn" class="submit-btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>Confirm Code</button>
+                
+                <!-- Opponent's Attempts Board (shown after code is set) -->
+                <div id="codemaker-watching-area" class="hidden mt-6">
+                    <div class="secret-code">
+                        <p class="text-white font-semibold mb-2">Opponent's Attempts: <span id="codemaker-attempts-count">0</span>/10</p>
+                    </div>
+                    <div class="game-board" id="codemaker-game-board">
+                        <!-- Opponent's attempts will appear here -->
+                    </div>
+                    <button id="submit-feedback-btn" class="submit-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hidden mt-4" disabled>Submit Feedback</button>
+                </div>
+            </div>
+
+            <!-- Codebreaker Area -->
+            <div id="codebreaker-area" class="hidden">
+                <div class="secret-code">
+                    <p class="text-white font-semibold mb-2">🔐 Secret Code</p>
+                    <div class="secret-code-pegs" id="hidden-code-pegs">
+                        <div class="secret-peg hidden"></div>
+                        <div class="secret-peg hidden"></div>
+                        <div class="secret-peg hidden"></div>
+                        <div class="secret-peg hidden"></div>
+                    </div>
+                    <p class="text-sm text-gray-300 mt-2">Attempts: <span id="attempts-count">0</span>/10</p>
+                </div>
+
+                <!-- Game Board -->
+                <div class="game-board" id="game-board">
+                    <!-- Rows will be added dynamically -->
+                </div>
+
+                <!-- Color Palette -->
+                <div class="color-palette" id="codebreaker-palette">
+                    <div class="color-choice peg red" data-color="red"></div>
+                    <div class="color-choice peg blue" data-color="blue"></div>
+                    <div class="color-choice peg green" data-color="green"></div>
+                    <div class="color-choice peg yellow" data-color="yellow"></div>
+                    <div class="color-choice peg purple" data-color="purple"></div>
+                    <div class="color-choice peg orange" data-color="orange"></div>
+                    <div class="color-choice peg white" data-color="white"></div>
+                    <div class="color-choice peg pink" data-color="pink"></div>
+                </div>
+
+                <button id="submit-guess-btn" class="submit-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>Submit Guess</button>
+            </div>
+
+            <!-- Waiting message -->
+            <div id="waiting-message" class="hidden text-center py-8">
+                <p class="text-xl text-gray-400">Waiting for opponent...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-8 rounded-lg text-center shadow-2xl max-w-md">
+            <h2 id="game-over-title" class="text-4xl font-bold mb-4"></h2>
+            <p id="game-over-message" class="text-xl mb-4"></p>
+            <div id="revealed-code" class="mb-6"></div>
+            <button id="play-again-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const createGameBtn = document.getElementById('create-game-btn');
+        const copySuccess = document.getElementById('copy-success');
+        const hostInfo = document.getElementById('host-info');
+        const hostIdInput = document.getElementById('host-id-input');
+        const copyIdBtn = document.getElementById('copy-id-btn');
+        const joinIdInput = document.getElementById('join-id-input');
+        const joinGameBtn = document.getElementById('join-game-btn');
+        
+        const codemakerArea = document.getElementById('codemaker-area');
+        const codebreakerArea = document.getElementById('codebreaker-area');
+        const waitingMessage = document.getElementById('waiting-message');
+        const myNameEl = document.getElementById('my-name');
+        const myRoleEl = document.getElementById('my-role');
+        const opponentNameGameEl = document.getElementById('opponent-name-game');
+        const submitCodeBtn = document.getElementById('submit-code-btn');
+        const submitGuessBtn = document.getElementById('submit-guess-btn');
+        const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+        const gameBoard = document.getElementById('game-board');
+        const attemptsCountEl = document.getElementById('attempts-count');
+        const codemakerWatchingArea = document.getElementById('codemaker-watching-area');
+        const codemakerGameBoard = document.getElementById('codemaker-game-board');
+        const codemakerAttemptsCountEl = document.getElementById('codemaker-attempts-count');
+        
+        const gameOverModal = document.getElementById('game-over-modal');
+        const gameOverTitle = document.getElementById('game-over-title');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const revealedCodeEl = document.getElementById('revealed-code');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        // --- Game State & P2P ---
+        let peer;
+        let connection; // Single connection for 2-player game
+        let isHost = false;
+        let myPlayerId = '';
+        let myPlayerName = '';
+        let opponentId = '';
+        let opponentName = '';
+        
+        const MAX_ATTEMPTS = 10;
+        const CODE_LENGTH = 4;
+        const COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'white', 'pink'];
+        
+        let gameState = {
+            isCodemaker: false,
+            secretCode: [],
+            currentGuess: [],
+            guessHistory: [],
+            attempts: 0,
+            gameActive: false,
+            selectedColor: null,
+            pendingGuess: null,
+            manualFeedback: { black: 0, white: 0 }
+        };
+
+        // --- Utility Functions ---
+        function generatePlayerId() {
+            return 'player_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function generatePlayerName() {
+            const adjectives = ['Clever', 'Swift', 'Sharp', 'Bright', 'Quick', 'Smart', 'Wise', 'Bold'];
+            const nouns = ['Detective', 'Sleuth', 'Solver', 'Thinker', 'Genius', 'Mind', 'Brain', 'Mastermind'];
+            return adjectives[Math.floor(Math.random() * adjectives.length)] + 
+                   nouns[Math.floor(Math.random() * nouns.length)];
+        }
+
+        function evaluateGuess(guess, secret) {
+            const feedback = { black: 0, white: 0 };
+            const secretCopy = [...secret];
+            const guessCopy = [...guess];
+            
+            // Check for exact matches (black pegs)
+            for (let i = 0; i < CODE_LENGTH; i++) {
+                if (guessCopy[i] === secretCopy[i]) {
+                    feedback.black++;
+                    secretCopy[i] = null;
+                    guessCopy[i] = null;
+                }
+            }
+            
+            // Check for color matches in wrong position (white pegs)
+            for (let i = 0; i < CODE_LENGTH; i++) {
+                if (guessCopy[i] !== null) {
+                    const index = secretCopy.indexOf(guessCopy[i]);
+                    if (index !== -1) {
+                        feedback.white++;
+                        secretCopy[index] = null;
+                    }
+                }
+            }
+            
+            return feedback;
+        }
+
+        // --- P2P Connection Handling ---
+        function initializePeer(hostIdToConnectTo) {
+            console.log('initializePeer called, hostIdToConnectTo:', hostIdToConnectTo);
+            
+            try {
+                // Create peer with minimal config - let PeerJS handle defaults
+                peer = new Peer();
+                console.log('Peer created, waiting for open event...');
+            } catch (err) {
+                console.error('Failed to create Peer:', err);
+                alert('Failed to initialize connection. Please refresh and try again.');
+                createGameBtn.disabled = false;
+                createGameBtn.textContent = 'Create Game';
+                joinGameBtn.disabled = false;
+                joinGameBtn.textContent = 'Join';
+                return;
+            }
+            
+            // Add a timeout in case the peer server is not responding
+            const timeout = setTimeout(() => {
+                if (!myPlayerId) {
+                    console.error('Peer open event timeout - server may be unavailable');
+                    alert('Unable to connect to game server. The server may be temporarily unavailable. Please try again later.');
+                    createGameBtn.disabled = false;
+                    createGameBtn.textContent = 'Create Game';
+                    joinGameBtn.disabled = false;
+                    joinGameBtn.textContent = 'Join';
+                    if (peer) peer.destroy();
+                }
+            }, 15000); // 15 second timeout
+
+            peer.on('open', id => {
+                clearTimeout(timeout);
+                console.log('Peer opened with ID:', id);
+                myPlayerId = id;
+                myPlayerName = generatePlayerName();
+                myNameEl.textContent = myPlayerName;
+                
+                if (hostIdToConnectTo) {
+                    console.log('Connecting to host:', hostIdToConnectTo);
+                    connectToHost(hostIdToConnectTo);
+                } else {
+                    console.log('Showing host info');
+                    hostIdInput.value = id;
+                    createGameBtn.classList.add('hidden');
+                    hostInfo.classList.remove('hidden');
+                }
+            });
+
+            peer.on('connection', newConn => {
+                console.log('Incoming connection from:', newConn.peer);
+                if (isHost && !connection) {
+                    setupConnection(newConn);
+                    opponentId = newConn.peer;
+                } else {
+                    console.log('Rejecting connection (already connected or not host)');
+                    newConn.close(); // Only 2 players allowed
+                }
+            });
+            
+            peer.on('error', err => {
+                console.error("PeerJS error:", err);
+                createGameBtn.disabled = false;
+                createGameBtn.textContent = 'Create Game';
+                joinGameBtn.disabled = false;
+                joinGameBtn.textContent = 'Join';
+                alert('Connection error: ' + err.type + '. Please refresh and try again.');
+            });
+        }
+
+        function connectToHost(hostId) {
+            const conn = peer.connect(hostId);
+            setupConnection(conn);
+            opponentId = hostId;
+        }
+
+        function setupConnection(conn) {
+            connection = conn;
+            
+            conn.on('open', () => {
+                console.log('Connection opened. isHost:', isHost);
+                // Guest sends introduction first
+                if (!isHost) {
+                    conn.send({
+                        type: 'introduce',
+                        playerId: myPlayerId,
+                        playerName: myPlayerName
+                    });
+                }
+            });
+            
+            conn.on('data', data => {
+                console.log('Received data:', data.type, 'isHost:', isHost);
+                handleData(data);
+            });
+            
+            conn.on('close', () => {
+                alert('Opponent disconnected.');
+                setTimeout(() => window.location.reload(), 2000);
+            });
+        }
+
+        // --- Data Handling ---
+        function handleData(data) {
+            console.log('handleData called:', data.type, 'isHost:', isHost, 'gameActive:', gameState.gameActive);
+            switch (data.type) {
+                case 'introduce':
+                    opponentName = data.playerName;
+                    opponentId = data.playerId;
+                    console.log('Opponent introduced:', opponentName);
+                    
+                    if (isHost) {
+                        // Host received guest's introduction
+                        document.getElementById('opponent-name').textContent = opponentName + ' joined!';
+                        opponentNameGameEl.textContent = opponentName;
+                        
+                        // Send back introduction
+                        connection.send({
+                            type: 'introduce',
+                            playerId: myPlayerId,
+                            playerName: myPlayerName
+                        });
+                        
+                        // Start the game
+                        setTimeout(() => startGame(), 1500);
+                    } else {
+                        // Guest received host's introduction back
+                        opponentNameGameEl.textContent = opponentName;
+                        console.log('Guest received host introduction, waiting for start-game...');
+                    }
+                    break;
+                    
+                case 'start-game':
+                    console.log('Received start-game, hostIsCodemaker:', data.hostIsCodemaker);
+                    // Guest receives this and sets their role
+                    gameState.isCodemaker = !data.hostIsCodemaker;
+                    console.log('Guest isCodemaker set to:', gameState.isCodemaker);
+                    if (!gameState.gameActive) {
+                        setupScreen.classList.add('hidden');
+                        gameScreen.classList.remove('hidden');
+                        startGameUI();
+                    }
+                    break;
+                    
+                case 'code-set':
+                    // Opponent has set their code, you can now start guessing
+                    waitingMessage.classList.add('hidden');
+                    codebreakerArea.classList.remove('hidden');
+                    initializeGameBoard();
+                    break;
+                    
+                case 'guess':
+                    // Display the guess on the codemaker's board with manual feedback controls
+                    displayOpponentGuessForManualFeedback(data.guess, data.attempt);
+                    
+                    // Store the current guess data for when feedback is submitted
+                    gameState.pendingGuess = {
+                        guess: data.guess,
+                        attempt: data.attempt
+                    };
+                    break;
+                    
+                case 'feedback':
+                    // Display feedback for your guess
+                    displayFeedback(data.guess, data.feedback, data.attempt);
+                    
+                    // Check if you won
+                    if (data.feedback.black === CODE_LENGTH) {
+                        setTimeout(() => {
+                            endGame(true, data.attempt, data.guess);
+                        }, 1000);
+                    } else if (data.attempt >= MAX_ATTEMPTS) {
+                        setTimeout(() => {
+                            endGame(false, data.attempt, null);
+                        }, 1000);
+                    } else {
+                        // Continue guessing
+                        gameState.currentGuess = [null, null, null, null];
+                        updateCurrentRow();
+                    }
+                    break;
+                    
+                case 'game-over':
+                    showGameOver(data.youWon, data.attempts, data.secretCode);
+                    break;
+                    
+                case 'play-again':
+                    resetGame();
+                    gameOverModal.classList.add('hidden');
+                    startGame(true); // Pass true to indicate this is a replay
+                    break;
+            }
+        }
+
+        // --- Game Logic ---
+        function startGame(isReplay = false) {
+            setupScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            
+            // Only set initial roles on first game, not on replay
+            if (!isReplay) {
+                // Host is always codemaker first, guest is always codebreaker first
+                if (isHost) {
+                    gameState.isCodemaker = true;
+                    // Tell guest to be codebreaker
+                    connection.send({
+                        type: 'start-game',
+                        hostIsCodemaker: true
+                    });
+                } else {
+                    gameState.isCodemaker = false;
+                }
+            }
+            
+            startGameUI();
+        }
+
+        function startGameUI() {
+            gameState.gameActive = true;
+            gameState.secretCode = [null, null, null, null];
+            gameState.currentGuess = [null, null, null, null];
+            gameState.guessHistory = [];
+            gameState.attempts = 0;
+            
+            if (gameState.isCodemaker) {
+                myRoleEl.textContent = 'Codemaker';
+                myRoleEl.className = 'turn-indicator bg-purple-600';
+                codemakerArea.classList.remove('hidden');
+                codebreakerArea.classList.add('hidden');
+                waitingMessage.classList.add('hidden');
+                setupCodemakerUI();
+            } else {
+                myRoleEl.textContent = 'Codebreaker';
+                myRoleEl.className = 'turn-indicator bg-indigo-600';
+                codemakerArea.classList.add('hidden');
+                codebreakerArea.classList.add('hidden');
+                waitingMessage.classList.remove('hidden');
+                waitingMessage.querySelector('p').textContent = 'Waiting for opponent to set their code...';
+            }
+        }
+
+        function setupCodemakerUI() {
+            // Reset the secret code state
+            gameState.secretCode = [null, null, null, null];
+            
+            const secretPegs = document.querySelectorAll('#secret-code-pegs .secret-peg');
+            secretPegs.forEach((peg, index) => {
+                peg.className = 'secret-peg peg-slot';
+                peg.innerHTML = '';
+                peg.classList.remove('filled');
+                peg.onclick = null;
+                peg.dataset.position = index;
+            });
+            
+            const colorChoices = document.querySelectorAll('#codemaker-palette .color-choice');
+            colorChoices.forEach(choice => {
+                choice.onclick = () => selectColorAndFill(choice.dataset.color);
+            });
+            
+            submitCodeBtn.disabled = true;
+        }
+
+        function selectColorAndFill(color) {
+            console.log('selectColorAndFill called with color:', color);
+            console.log('Current secretCode:', gameState.secretCode);
+            
+            // Find the next empty slot
+            const nextEmptyIndex = gameState.secretCode.findIndex((c, i) => c === null || c === undefined);
+            console.log('Next empty index:', nextEmptyIndex);
+            
+            if (nextEmptyIndex !== -1 && nextEmptyIndex < CODE_LENGTH) {
+                const peg = document.querySelector(`#secret-code-pegs .secret-peg[data-position="${nextEmptyIndex}"]`);
+                console.log('Found peg element:', peg);
+                const pegDiv = document.createElement('div');
+                pegDiv.className = `peg ${color}`;
+                peg.innerHTML = '';
+                peg.appendChild(pegDiv);
+                peg.classList.add('filled');
+                
+                // Add click handler to remove the peg
+                peg.onclick = () => removeSecretPeg(nextEmptyIndex);
+                
+                gameState.secretCode[nextEmptyIndex] = color;
+                
+                // Check if code is complete
+                const filledSlots = gameState.secretCode.filter(c => c !== null && c !== undefined).length;
+                if (filledSlots === CODE_LENGTH) {
+                    submitCodeBtn.disabled = false;
+                } else {
+                    submitCodeBtn.disabled = true;
+                }
+            }
+        }
+
+        function removeSecretPeg(position) {
+            const peg = document.querySelector(`#secret-code-pegs .secret-peg[data-position="${position}"]`);
+            peg.innerHTML = '';
+            peg.classList.remove('filled');
+            peg.onclick = null;
+            
+            gameState.secretCode[position] = null;
+            
+            // Disable submit button since code is incomplete
+            submitCodeBtn.disabled = true;
+        }
+
+        function selectColor(color, palette) {
+            gameState.selectedColor = color;
+            
+            const paletteId = palette === 'codemaker' ? 'codemaker-palette' : 'codebreaker-palette';
+            document.querySelectorAll(`#${paletteId} .color-choice`).forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            document.querySelector(`#${paletteId} .color-choice[data-color="${color}"]`).classList.add('selected');
+        }
+
+        function submitSecretCode() {
+            if (gameState.secretCode.filter(c => c).length !== CODE_LENGTH) return;
+            
+            // Hide the code setup, show the watching area
+            submitCodeBtn.classList.add('hidden');
+            document.getElementById('codemaker-palette').classList.add('hidden');
+            document.querySelector('#codemaker-area .secret-code p').textContent = 'Your Secret Code';
+            codemakerWatchingArea.classList.remove('hidden');
+            codemakerGameBoard.innerHTML = '';
+            codemakerAttemptsCountEl.textContent = '0';
+            
+            connection.send({
+                type: 'code-set'
+            });
+        }
+
+        function initializeGameBoard() {
+            gameBoard.innerHTML = '';
+            gameState.attempts = 0;
+            attemptsCountEl.textContent = '0';
+            
+            // Create first row
+            createGuessRow(0);
+            
+            // Setup color palette - now auto-fills like codemaker
+            const colorChoices = document.querySelectorAll('#codebreaker-palette .color-choice');
+            colorChoices.forEach(choice => {
+                choice.onclick = () => selectColorAndFillGuess(choice.dataset.color);
+            });
+        }
+
+        function createGuessRow(attemptNumber) {
+            // Check if row already exists
+            const existingRow = document.getElementById(`row-${attemptNumber}`);
+            if (existingRow) {
+                console.log('Row already exists:', `row-${attemptNumber}`);
+                return;
+            }
+            
+            const row = document.createElement('div');
+            row.className = 'code-row';
+            row.id = `row-${attemptNumber}`;
+            if (attemptNumber === gameState.attempts) {
+                row.classList.add('current');
+            }
+            
+            const pegsContainer = document.createElement('div');
+            pegsContainer.style.display = 'flex';
+            pegsContainer.style.gap = '0.5rem';
+            
+            for (let i = 0; i < CODE_LENGTH; i++) {
+                const pegSlot = document.createElement('div');
+                pegSlot.className = 'peg-slot';
+                pegSlot.dataset.position = i;
+                // No onclick needed - colors auto-fill now
+                pegsContainer.appendChild(pegSlot);
+            }
+            
+            const feedbackArea = document.createElement('div');
+            feedbackArea.className = 'feedback-area';
+            for (let i = 0; i < CODE_LENGTH; i++) {
+                const feedbackPeg = document.createElement('div');
+                feedbackPeg.className = 'feedback-peg';
+                feedbackArea.appendChild(feedbackPeg);
+            }
+            
+            row.appendChild(pegsContainer);
+            row.appendChild(feedbackArea);
+            gameBoard.appendChild(row);
+        }
+
+        function selectColorAndFillGuess(color) {
+            // Find the next empty slot in the current guess
+            const nextEmptyIndex = gameState.currentGuess.findIndex((c, i) => c === null || c === undefined);
+            
+            if (nextEmptyIndex !== -1 && nextEmptyIndex < CODE_LENGTH) {
+                const currentRow = document.getElementById(`row-${gameState.attempts}`);
+                if (!currentRow) {
+                    console.error(`Row not found: row-${gameState.attempts}`);
+                    return;
+                }
+                const pegSlot = currentRow.querySelector(`.peg-slot[data-position="${nextEmptyIndex}"]`);
+                
+                const pegDiv = document.createElement('div');
+                pegDiv.className = `peg ${color}`;
+                pegSlot.innerHTML = '';
+                pegSlot.appendChild(pegDiv);
+                pegSlot.classList.add('filled');
+                
+                // Add click handler to remove the peg
+                pegSlot.onclick = () => removeGuessPeg(nextEmptyIndex);
+                pegSlot.style.cursor = 'pointer';
+                
+                gameState.currentGuess[nextEmptyIndex] = color;
+                
+                // Check if guess is complete
+                const filledSlots = gameState.currentGuess.filter(c => c !== null && c !== undefined).length;
+                if (filledSlots === CODE_LENGTH) {
+                    submitGuessBtn.disabled = false;
+                } else {
+                    submitGuessBtn.disabled = true;
+                }
+            }
+        }
+
+        function removeGuessPeg(position) {
+            const currentRow = document.getElementById(`row-${gameState.attempts}`);
+            if (!currentRow) {
+                console.error(`Row not found: row-${gameState.attempts}`);
+                return;
+            }
+            const pegSlot = currentRow.querySelector(`.peg-slot[data-position="${position}"]`);
+            
+            pegSlot.innerHTML = '';
+            pegSlot.classList.remove('filled');
+            pegSlot.onclick = null;
+            pegSlot.style.cursor = 'default';
+            
+            gameState.currentGuess[position] = null;
+            
+            // Disable submit button since guess is incomplete
+            submitGuessBtn.disabled = true;
+        }
+
+        function placePegInGuess(position) {
+            if (!gameState.selectedColor) return;
+            
+            const currentRow = document.getElementById(`row-${gameState.attempts}`);
+            const pegSlot = currentRow.querySelector(`.peg-slot[data-position="${position}"]`);
+            
+            const pegDiv = document.createElement('div');
+            pegDiv.className = `peg ${gameState.selectedColor}`;
+            pegSlot.innerHTML = '';
+            pegSlot.appendChild(pegDiv);
+            pegSlot.classList.add('filled');
+            
+            gameState.currentGuess[position] = gameState.selectedColor;
+            
+            // Check if guess is complete
+            if (gameState.currentGuess.filter(c => c).length === CODE_LENGTH) {
+                submitGuessBtn.disabled = false;
+            }
+        }
+
+        function updateCurrentRow() {
+            console.log('updateCurrentRow called, current attempts:', gameState.attempts);
+            submitGuessBtn.disabled = true;
+            gameState.currentGuess = [null, null, null, null];
+            
+            // Create next row if not max attempts
+            if (gameState.attempts < MAX_ATTEMPTS) {
+                console.log('Creating row:', gameState.attempts);
+                createGuessRow(gameState.attempts);
+            }
+        }
+
+        function submitGuess() {
+            if (gameState.currentGuess.filter(c => c).length !== CODE_LENGTH) return;
+            
+            gameState.attempts++;
+            attemptsCountEl.textContent = gameState.attempts;
+            
+            const currentRow = document.getElementById(`row-${gameState.attempts - 1}`);
+            currentRow.classList.remove('current');
+            currentRow.classList.add('completed');
+            
+            // Send guess to opponent
+            connection.send({
+                type: 'guess',
+                guess: gameState.currentGuess,
+                attempt: gameState.attempts
+            });
+            
+            submitGuessBtn.disabled = true;
+        }
+
+        function displayFeedback(guess, feedback, attempt) {
+            const row = document.getElementById(`row-${attempt - 1}`);
+            const feedbackPegs = row.querySelectorAll('.feedback-peg');
+            
+            let pegIndex = 0;
+            
+            // Black pegs first
+            for (let i = 0; i < feedback.black; i++) {
+                feedbackPegs[pegIndex].classList.add('black');
+                pegIndex++;
+            }
+            
+            // Then white pegs
+            for (let i = 0; i < feedback.white; i++) {
+                feedbackPegs[pegIndex].classList.add('white');
+                pegIndex++;
+            }
+        }
+
+        function displayOpponentGuess(guess, feedback, attempt) {
+            // Update attempt counter
+            codemakerAttemptsCountEl.textContent = attempt;
+            
+            // Create a row to show the opponent's guess
+            const row = document.createElement('div');
+            row.className = 'code-row completed';
+            row.id = `codemaker-row-${attempt}`;
+            
+            // Create pegs container
+            const pegsContainer = document.createElement('div');
+            pegsContainer.style.display = 'flex';
+            pegsContainer.style.gap = '0.5rem';
+            
+            // Add the guess pegs
+            for (let i = 0; i < CODE_LENGTH; i++) {
+                const pegSlot = document.createElement('div');
+                pegSlot.className = 'peg-slot filled';
+                const pegDiv = document.createElement('div');
+                pegDiv.className = `peg ${guess[i]}`;
+                pegSlot.appendChild(pegDiv);
+                pegsContainer.appendChild(pegSlot);
+            }
+            
+            // Create feedback area
+            const feedbackArea = document.createElement('div');
+            feedbackArea.className = 'feedback-area';
+            
+            let pegIndex = 0;
+            // Black pegs first
+            for (let i = 0; i < feedback.black; i++) {
+                const feedbackPeg = document.createElement('div');
+                feedbackPeg.className = 'feedback-peg black';
+                feedbackArea.appendChild(feedbackPeg);
+                pegIndex++;
+            }
+            // White pegs
+            for (let i = 0; i < feedback.white; i++) {
+                const feedbackPeg = document.createElement('div');
+                feedbackPeg.className = 'feedback-peg white';
+                feedbackArea.appendChild(feedbackPeg);
+                pegIndex++;
+            }
+            // Fill remaining with empty pegs
+            for (let i = pegIndex; i < CODE_LENGTH; i++) {
+                const feedbackPeg = document.createElement('div');
+                feedbackPeg.className = 'feedback-peg';
+                feedbackArea.appendChild(feedbackPeg);
+            }
+            
+            row.appendChild(pegsContainer);
+            row.appendChild(feedbackArea);
+            codemakerGameBoard.appendChild(row);
+        }
+
+        function displayOpponentGuessForManualFeedback(guess, attempt) {
+            // Update attempt counter
+            codemakerAttemptsCountEl.textContent = attempt;
+            
+            // Reset manual feedback
+            gameState.manualFeedback = { black: 0, white: 0 };
+            
+            // Create a row to show the opponent's guess
+            const row = document.createElement('div');
+            row.className = 'code-row current';
+            row.id = `codemaker-row-${attempt}`;
+            
+            // Create pegs container
+            const pegsContainer = document.createElement('div');
+            pegsContainer.style.display = 'flex';
+            pegsContainer.style.gap = '0.5rem';
+            
+            // Add the guess pegs
+            for (let i = 0; i < CODE_LENGTH; i++) {
+                const pegSlot = document.createElement('div');
+                pegSlot.className = 'peg-slot filled';
+                const pegDiv = document.createElement('div');
+                pegDiv.className = `peg ${guess[i]}`;
+                pegSlot.appendChild(pegDiv);
+                pegsContainer.appendChild(pegSlot);
+            }
+            
+            // Create interactive feedback area
+            const feedbackArea = document.createElement('div');
+            feedbackArea.className = 'feedback-area';
+            feedbackArea.id = 'current-feedback-area';
+            
+            // Create 4 clickable feedback pegs
+            for (let i = 0; i < CODE_LENGTH; i++) {
+                const feedbackPeg = document.createElement('div');
+                feedbackPeg.className = 'feedback-peg';
+                feedbackPeg.style.cursor = 'pointer';
+                feedbackPeg.dataset.pegIndex = i;
+                feedbackPeg.dataset.state = 'empty'; // empty, white, black
+                feedbackPeg.onclick = () => cycleFeedbackPeg(feedbackPeg);
+                feedbackArea.appendChild(feedbackPeg);
+            }
+            
+            row.appendChild(pegsContainer);
+            row.appendChild(feedbackArea);
+            codemakerGameBoard.appendChild(row);
+            
+            // Show submit button
+            submitFeedbackBtn.classList.remove('hidden');
+            submitFeedbackBtn.disabled = false;
+        }
+
+        function cycleFeedbackPeg(pegElement) {
+            const currentState = pegElement.dataset.state;
+            
+            // Cycle through: empty -> white -> black -> empty
+            if (currentState === 'empty') {
+                pegElement.dataset.state = 'white';
+                pegElement.classList.add('white');
+                pegElement.classList.remove('black');
+            } else if (currentState === 'white') {
+                pegElement.dataset.state = 'black';
+                pegElement.classList.remove('white');
+                pegElement.classList.add('black');
+            } else {
+                pegElement.dataset.state = 'empty';
+                pegElement.classList.remove('white', 'black');
+            }
+            
+            // Update manual feedback count
+            updateManualFeedbackCount();
+        }
+
+        function updateManualFeedbackCount() {
+            const feedbackPegs = document.querySelectorAll('#current-feedback-area .feedback-peg');
+            let black = 0, white = 0;
+            
+            feedbackPegs.forEach(peg => {
+                if (peg.dataset.state === 'black') black++;
+                if (peg.dataset.state === 'white') white++;
+            });
+            
+            gameState.manualFeedback = { black, white };
+        }
+
+        function submitManualFeedback() {
+            if (!gameState.pendingGuess) return;
+            
+            const feedback = gameState.manualFeedback;
+            const { guess, attempt } = gameState.pendingGuess;
+            
+            // Send feedback to opponent
+            connection.send({
+                type: 'feedback',
+                feedback: feedback,
+                guess: guess,
+                attempt: attempt
+            });
+            
+            // Mark row as completed
+            const row = document.getElementById(`codemaker-row-${attempt}`);
+            row.classList.remove('current');
+            row.classList.add('completed');
+            
+            // Remove the current-feedback-area ID so it doesn't interfere with the next guess
+            const feedbackArea = row.querySelector('#current-feedback-area');
+            if (feedbackArea) {
+                feedbackArea.id = '';
+            }
+            
+            // Disable feedback pegs
+            const feedbackPegs = row.querySelectorAll('.feedback-peg');
+            feedbackPegs.forEach(peg => {
+                peg.style.cursor = 'default';
+                peg.onclick = null;
+            });
+            
+            // Hide submit button
+            submitFeedbackBtn.classList.add('hidden');
+            submitFeedbackBtn.disabled = true;
+            
+            // Check if they won
+            if (feedback.black === CODE_LENGTH) {
+                setTimeout(() => {
+                    endGame(false, attempt, guess);
+                }, 1000);
+            } else if (attempt >= MAX_ATTEMPTS) {
+                setTimeout(() => {
+                    endGame(true, attempt, null);
+                }, 1000);
+            }
+            
+            // Clear pending guess
+            gameState.pendingGuess = null;
+        }
+
+        function endGame(youWon, attempts, finalGuess) {
+            gameState.gameActive = false;
+            
+            connection.send({
+                type: 'game-over',
+                youWon: !youWon,
+                attempts: attempts,
+                secretCode: gameState.secretCode
+            });
+            
+            // If you're the codemaker, you don't need to see the code (you made it)
+            // If you're the codebreaker, pass null here - you'll get the code from the opponent's game-over message
+            showGameOver(youWon, attempts, null);
+        }
+
+        function showGameOver(youWon, attempts, secretCode) {
+            if (youWon) {
+                if (gameState.isCodemaker) {
+                    gameOverTitle.textContent = 'Code Protected! 🛡️';
+                    gameOverMessage.textContent = `Your opponent couldn't crack your code in ${attempts} attempts!`;
+                } else {
+                    gameOverTitle.textContent = 'Code Cracked! 🎉';
+                    gameOverMessage.textContent = `You broke the code in ${attempts} attempt${attempts > 1 ? 's' : ''}!`;
+                }
+            } else {
+                if (gameState.isCodemaker) {
+                    gameOverTitle.textContent = 'Code Broken! 💔';
+                    gameOverMessage.textContent = `Your opponent cracked your code in ${attempts} attempts.`;
+                } else {
+                    gameOverTitle.textContent = 'Out of Attempts! ❌';
+                    gameOverMessage.textContent = `You couldn't crack the code in ${MAX_ATTEMPTS} attempts.`;
+                }
+            }
+            
+            // Show secret code to codebreaker (whether they won or lost)
+            if (secretCode && !gameState.isCodemaker) {
+                revealedCodeEl.innerHTML = '<p class="text-sm text-gray-400 mb-2">The secret code was:</p>' +
+                    '<div class="flex justify-center gap-2">' +
+                    secretCode.map(color => `<div class="secret-peg peg ${color}"></div>`).join('') +
+                    '</div>';
+            } else {
+                revealedCodeEl.innerHTML = '';
+            }
+            
+            // Reset play again button state
+            playAgainBtn.disabled = false;
+            playAgainBtn.textContent = 'Play Again';
+            
+            gameOverModal.classList.remove('hidden');
+        }
+
+        function resetGame() {
+            // Switch roles for next round
+            gameState.isCodemaker = !gameState.isCodemaker;
+            gameState.secretCode = [null, null, null, null];
+            gameState.currentGuess = [null, null, null, null];
+            gameState.guessHistory = [];
+            gameState.attempts = 0;
+            gameState.gameActive = false;
+            gameState.selectedColor = null;
+            gameState.pendingGuess = null;
+            gameState.manualFeedback = { black: 0, white: 0 };
+            
+            // Clear game boards
+            gameBoard.innerHTML = '';
+            codemakerGameBoard.innerHTML = '';
+            
+            // Reset all UI elements
+            submitFeedbackBtn.classList.add('hidden');
+            submitCodeBtn.classList.remove('hidden');
+            submitCodeBtn.disabled = true;
+            submitGuessBtn.disabled = true;
+            
+            // Show codemaker palette again
+            document.getElementById('codemaker-palette').classList.remove('hidden');
+            
+            // Hide codemaker watching area
+            codemakerWatchingArea.classList.add('hidden');
+            
+            // Reset attempt counters
+            attemptsCountEl.textContent = '0';
+            codemakerAttemptsCountEl.textContent = '0';
+            
+            // Reset the secret code display text
+            const codemakerSecretText = document.querySelector('#codemaker-area .secret-code p');
+            if (codemakerSecretText) {
+                codemakerSecretText.textContent = 'Set Your Secret Code';
+            }
+            
+            // Clear color selections
+            document.querySelectorAll('.color-choice').forEach(c => c.classList.remove('selected'));
+        }
+
+        // --- Event Listeners ---
+        copyIdBtn.addEventListener('click', () => {
+            hostIdInput.select();
+            document.execCommand('copy');
+            copySuccess.textContent = 'Copied!';
+            setTimeout(() => copySuccess.textContent = '', 2000);
+        });
+
+        submitCodeBtn.addEventListener('click', submitSecretCode);
+        submitGuessBtn.addEventListener('click', submitGuess);
+        submitFeedbackBtn.addEventListener('click', submitManualFeedback);
+
+        playAgainBtn.addEventListener('click', () => {
+            if (isHost) {
+                resetGame();
+                connection.send({ type: 'play-again' });
+                gameOverModal.classList.add('hidden');
+                startGame(true); // Pass true to indicate this is a replay
+            } else {
+                connection.send({ type: 'play-again' });
+                playAgainBtn.disabled = true;
+                playAgainBtn.textContent = 'Waiting for host...';
+            }
+        });
+
+        createGameBtn.addEventListener('click', () => {
+            isHost = true;
+            createGameBtn.disabled = true;
+            createGameBtn.textContent = 'Creating...';
+            document.getElementById('join-section').classList.add('hidden');
+            document.getElementById('or-divider').classList.add('hidden');
+            initializePeer();
+        });
+
+        joinGameBtn.addEventListener('click', () => {
+            const hostId = joinIdInput.value.trim();
+            if (hostId) {
+                isHost = false;
+                joinGameBtn.disabled = true;
+                joinGameBtn.textContent = 'Joining...';
+                document.getElementById('create-section').classList.add('hidden');
+                document.getElementById('or-divider').classList.add('hidden');
+                initializePeer(hostId);
+            } else {
+                alert('Please enter a valid Host ID.');
+            }
+        });
+    </script>
+
+</body>
+</html>

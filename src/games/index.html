@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games Platform - Fun Multiplayer Games</title>
+    <link rel="stylesheet" type="text/css" href="./common/common.css">
+    <meta name="description" content="Play exciting multiplayer games with friends. From geography challenges to strategy games - all in your browser.">
+    <style>
+        /* Landing page specific styles */
+        .hero-section {
+            padding: var(--spacing-2xl) 0;
+            text-align: center;
+        }
+        
+        .hero-title {
+            background: linear-gradient(135deg, var(--accent-primary), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto var(--spacing-xl) auto;
+        }
+        
+        .games-section {
+            padding: var(--spacing-xl) 0;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        @media (max-width: 640px) {
+            .game-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-lg);
+            }
+            
+            .hero-section {
+                padding: var(--spacing-xl) 0;
+            }
+        }
+        
+        /* Game tile enhancements */
+        .game-tile {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .game-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .game-meta {
+            margin-top: auto;
+            padding-top: var(--spacing-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .player-count {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+        
+        .difficulty-indicator {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .difficulty-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+        }
+        
+        .difficulty-dot.active {
+            background-color: var(--accent-primary);
+        }
+        
+        /* Coming soon overlay */
+        .coming-soon-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-lg);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        
+        .game-tile.coming-soon:hover .coming-soon-overlay {
+            opacity: 1;
+        }
+        
+        .coming-soon-text {
+            color: white;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: var(--spacing-2xl) 0;
+            border-top: 1px solid var(--bg-tertiary);
+            margin-top: var(--spacing-2xl);
+            color: var(--text-muted);
+        }
+        
+        /* Hover effects */
+        .game-tile:not(.coming-soon):hover .game-icon {
+            transform: scale(1.1);
+            transition: transform var(--transition-normal);
+        }
+        
+        .game-tile.coming-soon {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .game-tile.coming-soon:hover {
+            transform: none;
+            border-color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero-section fade-in">
+            <h1 class="heading-1 hero-title" style="margin-bottom: var(--spacing-sm);">P2P GAMES</h1>
+        </section>
+        
+        <!-- Games Section -->
+        <section class="games-section">
+            <div class="section-header fade-in-delay-1">
+                <h2 class="heading-2">Available Games</h2>
+                <p class="text-muted">All games are peer-to-peer</p>
+            </div>
+            
+            <div class="game-grid">
+                <!-- GeoDuel Game -->
+                <div class="card card-interactive game-tile fade-in-delay-2" onclick="window.location.href='./geoduel/'" role="button" tabindex="0" onkeypress="handleKeyPress(event, './geoduel/')">
+                    <div class="game-content">
+                        <div class="game-icon">🌍</div>
+                        <h3 class="heading-3 text-center">Geo Duel</h3>
+                        <p class="game-description">
+                            The ultimate geography challenge! Race against friends to identify countries on the world map. 
+                            Test your geographical knowledge in this fast-paced, competitive game.
+                        </p>
+                        <div class="game-meta">
+                            <div class="player-count">
+                                <span>👥</span>
+                                <span>2 Players</span>
+                            </div>
+                            <div class="difficulty-indicator" title="Difficulty: Medium">
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- FlagFight Game -->
+                <div class="card card-interactive game-tile fade-in-delay-3" onclick="window.location.href='./flagfight/'" role="button" tabindex="0" onkeypress="handleKeyPress(event, './flagfight/')">
+                    <div class="game-content">
+                        <div class="game-icon">🏴</div>
+                        <h3 class="heading-3 text-center">Flag Fight</h3>
+                        <p class="game-description">
+                            Fast-paced multiplayer flag guessing game! Up to 8 players compete in 10-second rounds. 
+                            Identify flags from around the world and climb the leaderboard.
+                        </p>
+                        <div class="game-meta">
+                            <div class="player-count">
+                                <span>👥</span>
+                                <span>2-8 Players</span>
+                            </div>
+                            <div class="difficulty-indicator" title="Difficulty: Hard">
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot active"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mastermind Game -->
+                <div class="card card-interactive game-tile fade-in-delay-4" onclick="window.location.href='./mastermind/'" role="button" tabindex="0" onkeypress="handleKeyPress(event, './mastermind/')">
+                    <div class="game-content">
+                        <div class="game-icon">🧩</div>
+                        <h3 class="heading-3 text-center">Mastermind</h3>
+                        <p class="game-description">
+                            The classic code-breaking challenge! Take turns as Codemaker and Codebreaker. 
+                            Use logic and deduction to crack the secret 4-peg code in 10 attempts or less.
+                        </p>
+                        <div class="game-meta">
+                            <div class="player-count">
+                                <span>👥</span>
+                                <span>2 Players</span>
+                            </div>
+                            <div class="difficulty-indicator" title="Difficulty: Medium">
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Work in Progress -->
+                <div class="card card-interactive game-tile coming-soon fade-in-delay-5" tabindex="0">
+                    <div class="game-content">
+                        <div class="game-icon">🚧</div>
+                        <h3 class="heading-3 text-center">More Games</h3>
+                        <p class="game-description">
+                            Additional exciting multiplayer games are currently in development. 
+                            Stay tuned for new challenges and adventures!
+                        </p>
+                        <div class="game-meta">
+                            <div class="player-count">
+                                <span>👥</span>
+                                <span>Multiple Players</span>
+                            </div>
+                            <div class="difficulty-indicator" title="Difficulty: Varies">
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot active"></div>
+                                <div class="difficulty-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="coming-soon-overlay">
+                        <div class="coming-soon-text">Work in Progress</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <script>
+        // Handle keyboard navigation for game tiles
+        function handleKeyPress(event, url) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (url) {
+                    window.location.href = url;
+                }
+            }
+        }
+        
+        // Add keyboard event listeners to all game tiles
+        document.addEventListener('DOMContentLoaded', function() {
+            const gameTiles = document.querySelectorAll('.game-tile');
+            
+            gameTiles.forEach(tile => {
+                // Add keyboard support
+                tile.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        if (!tile.classList.contains('coming-soon')) {
+                            tile.click();
+                        }
+                    }
+                });
+                
+                // Add focus styles
+                tile.addEventListener('focus', function() {
+                    this.style.outline = '2px solid var(--accent-primary)';
+                    this.style.outlineOffset = '2px';
+                });
+                
+                tile.addEventListener('blur', function() {
+                    this.style.outline = 'none';
+                });
+            });
+            
+            // Add subtle parallax effect to hero section on desktop
+            if (window.innerWidth > 768) {
+                window.addEventListener('scroll', function() {
+                    const scrolled = window.pageYOffset;
+                    const heroSection = document.querySelector('.hero-section');
+                    if (heroSection) {
+                        const rate = scrolled * -0.5;
+                        heroSection.style.transform = `translateY(${rate}px)`;
+                    }
+                });
+            }
+        });
+        
+        // Add analytics tracking for game clicks (placeholder)
+        function trackGameClick(gameName) {
+            // In a real application, you would send analytics data here
+            console.log(`Game clicked: ${gameName}`);
+        }
+        
+        // Track clicks on available games
+        document.addEventListener('DOMContentLoaded', function() {
+            const gameTiles = document.querySelectorAll('.game-tile:not(.coming-soon)');
+            gameTiles.forEach((tile, index) => {
+                const gameName = index === 0 ? 'GeoDuel' : index === 1 ? 'FlagFight' : index === 2 ? 'Mastermind' : 'Unknown';
+                tile.addEventListener('click', () => trackGameClick(gameName));
+            });
+        });
+    </script>
+</body>
+</html>

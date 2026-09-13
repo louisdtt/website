@@ -1,0 +1,33 @@
+# docker-compose.yml — Open WebUI + SearXNG (search) ; extract = WebUI built-in fetcher
+# Hermes gateway stays on the host (bridge via host.docker.internal).
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    restart: always
+    ports:
+      - "127.0.0.1:3000:8080"          # loopback-only publish: cloudflared -> localhost:3000
+    volumes:
+      - open-webui:/app/backend/data
+    environment:
+      # LLM backend: Hermes gateway on host
+      - OPENAI_API_BASE_URLS=http://host.docker.internal:8642/v1;https://inference-api.nousresearch.com/v1
+      - ENABLE_OLLAMA_API=false
+      # web search: SearXNG
+      - ENABLE_RAG_WEB_SEARCH=true
+      - RAG_WEB_SEARCH_ENGINE=searxng
+      - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>
+      - RAG_WEB_SEARCH_RESULT_COUNT=3
+      - RAG_WEB_SEARCH_CONCURRENT_REQUESTS_LIMIT=5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  searxng:
+    image: searxng/searxng:latest
+    restart: always
+    volumes:
+      - ./searxng:/etc/searxng
+    ports:
+      - "127.0.0.1:8081:8080"
+
+volumes:
+  open-webui:

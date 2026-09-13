@@ -17,17 +17,3 @@ echo "=== Done ==="
 docker --version
 docker compose version
 echo "Log out/in (or 'newgrp docker') for the docker group to apply."
-
-# SearxNG setup
-mkdir -p ./searxng
-{ echo "use_default_settings: true"
-  echo "server:"
-  echo "  secret_key: \"$(openssl rand -hex 32)\""
-  echo "  limiter: false"
-  echo "search:"
-  echo "  formats:"
-  echo "    - html"
-  echo "    - json"
-} > ./searxng/settings.yml
-
-cat ./searxng/settings.yml   # verify

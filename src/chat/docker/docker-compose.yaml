@@ -2,7 +2,7 @@
 # Hermes gateway stays on the host (bridge via host.docker.internal).
 services:
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:slim
     restart: always
     ports:
       - "127.0.0.1:3000:8080"          # loopback-only publish: cloudflared -> localhost:3000

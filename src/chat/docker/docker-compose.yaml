@@ -2,7 +2,7 @@
 # Hermes gateway stays on the host (bridge via host.docker.internal).
 services:
   open-webui:
-    image: ghcr.io/open-webui/open-webui:slim
+    image: ghcr.io/open-webui/open-webui:main
     restart: always
     ports:
       - "127.0.0.1:3000:8080"          # loopback-only publish: cloudflared -> localhost:3000
@@ -12,6 +12,7 @@ services:
       # LLM backend: Hermes gateway on host
       - OPENAI_API_BASE_URLS=http://host.docker.internal:8642/v1;https://inference-api.nousresearch.com/v1
       - ENABLE_OLLAMA_API=false
+      - AIOHTTP_CLIENT_ALLOW_REDIRECTS=true
       # web search: SearXNG
       - ENABLE_RAG_WEB_SEARCH=true
       - RAG_WEB_SEARCH_ENGINE=searxng
